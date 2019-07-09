@@ -1,0 +1,12 @@
+{
+  "domain": "mikrotik",
+  "name": "Mikrotik",
+  "documentation": "https://github.com/pilotak/homeassistant-mikrotik/blob/master/info.md",
+  "requirements": [
+  	"librouteros==1.0.4"
+  ],
+  "dependencies": [],
+  "codeowners": [
+  	"@pilotak"
+  ]
+}

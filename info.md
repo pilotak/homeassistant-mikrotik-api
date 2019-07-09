@@ -1,4 +1,3 @@
-# HomeAssistant component: `MikroTik`
 The `mikotik` platform enables you to execute scripts in MikroTik router
 
 To enable MikroTik platform in your installation, add the following to your `configuration.yaml` file:
