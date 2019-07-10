@@ -17,3 +17,19 @@ Configuration variables:
 - **port** (*Optional*): default is `8728`
 - **username** (*Required*)
 - **password** (*Optional*)
+
+## Install via [HACS](https://github.com/custom-components/hacs)
+You can find this integration in a store.
+
+## Install manually
+You need to clone this repo to the root folder of your configuration, file tree should look like this:
+```
+└── ...
+└── configuration.yaml
+└── secrects.yaml
+└── custom_components
+    └── mikotik
+        └── __init__.py
+        └── manifest.json
+        └── services.yaml
+```

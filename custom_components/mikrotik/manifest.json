@@ -1,7 +1,7 @@
 {
   "domain": "mikrotik",
   "name": "Mikrotik",
-  "documentation": "https://github.com/pilotak/homeassistant-mikrotik/blob/master/info.md",
+  "documentation": "https://github.com/pilotak/homeassistant-mikrotik",
   "requirements": [
   	"librouteros==1.0.4"
   ],
