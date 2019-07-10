@@ -1,5 +1,5 @@
 # HomeAssistant component: `MikroTik`
-The `mikotik` platform enables you to execute scripts in MikroTik router
+The `mikrotik` platform enables you to execute scripts in MikroTik router
 
 To enable MikroTik platform in your installation, add the following to your `configuration.yaml` file:
 
@@ -22,14 +22,16 @@ Configuration variables:
 You can find this integration in a store.
 
 ## Install manually
-You need to clone this repo to the root folder of your configuration, file tree should look like this:
+You need to copy `mikrotik` folder from this repo to the `custom_components` folder in the root of your configuration, file tree should look like this:
 ```
 └── ...
 └── configuration.yaml
 └── secrects.yaml
 └── custom_components
-    └── mikotik
+    └── mikrotik
         └── __init__.py
         └── manifest.json
         └── services.yaml
 ```
+
+>__Note__: if the `custom_components` directory does not exist, you need to create it.
