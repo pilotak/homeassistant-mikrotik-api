@@ -3,7 +3,7 @@
   "name": "Mikrotik",
   "documentation": "https://github.com/pilotak/homeassistant-mikrotik",
   "requirements": [
-  	"librouteros==1.0.4"
+  	"librouteros==3.0.0"
   ],
   "dependencies": [],
   "codeowners": [

@@ -9,9 +9,9 @@ from homeassistant.const import (
 
 import librouteros
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
-REQUIREMENTS = ['librouteros==1.0.4']
+REQUIREMENTS = ['librouteros==3.0.0']
 
 DOMAIN = "mikrotik"
 DEFAUL_PORT = 8728
