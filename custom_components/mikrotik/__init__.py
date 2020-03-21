@@ -2,21 +2,28 @@ import asyncio
 import logging
 
 import voluptuous as vol
+import re
 
 import homeassistant.helpers.config_validation as cv
 from homeassistant.const import (
-    CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_PORT, CONF_NAME)
+    CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_PORT, CONF_NAME,
+    CONF_COMMAND)
 
-import librouteros
+from librouteros import connect
+from librouteros.query import Key
 
-__version__ = '1.0.1'
+from .const import (
+    DEFAUL_PORT,
+    RUN_SCRIPT_COMMAND,
+    API_COMMAND,
+    CONF_FIND
+)
+
+__version__ = '1.1.0'
 
 REQUIREMENTS = ['librouteros==3.0.0']
 
 DOMAIN = "mikrotik"
-DEFAUL_PORT = 8728
-
-SERVICE_COMMAND_NAME = "run_script"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,12 +32,17 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_PORT): cv.port,
+        vol.Optional(CONF_PORT): cv.port
     }),
 }, extra=vol.ALLOW_EXTRA)
 
-SERVICE_SCHEMA = vol.Schema({
+SCRIPT_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string
+})
+
+API_SCHEMA = vol.Schema({
+    vol.Required(CONF_COMMAND): cv.string,
+    vol.Optional(CONF_FIND): cv.string
 })
 
 
@@ -46,53 +58,94 @@ def async_setup(hass, config):
     _LOGGER.info("Setup")
 
     @asyncio.coroutine
-    def run_script(call):
+    def run(call):
         """Run script service."""
-        req_script = call.data.get(CONF_NAME)
 
-        _LOGGER.debug("Sending request to run '%s' script",
-                      req_script)
         try:
-            client = librouteros.connect(
-                host,
-                username,
-                password,
+            api = connect(
+                host=host,
+                username=username,
+                password=password,
                 port=port
             )
 
-            try:
-                scripts = client(cmd='/system/script/print')
+            if CONF_NAME in call.data:
+                req_script = call.data.get(CONF_NAME)
 
-                for script in scripts:
-                    try:
-                        _LOGGER.debug("Script found: %s, id: %s, invalid: %s",
-                                      script.get('name'),
-                                      script.get('.id'),
-                                      script.get('invalid'))
+                _LOGGER.debug("Sending request to run '%s' script", req_script)
 
-                        if req_script == script.get('name') and \
-                                not script.get('invalid'):
-                            _LOGGER.info("Running script id: %s",
-                                         script.get('.id'))
+                try:
+                    name = Key('name')
+                    id = Key('.id')
 
-                            params = {'.id': script.get('.id')}
-                            run = client(cmd='/system/script/run', **params)
+                    for script_id in api.path(
+                            'system',
+                            'script').select(id).where(name == req_script):
+                        _LOGGER.info("Running script: %s", script_id)
 
-                    except Exception as e:
-                        _LOGGER.error("Run script error: %s", str(e))
+                        cmd = api.path('system', 'script')
+                        tuple(cmd('run', **script_id))
 
-            except (librouteros.exceptions.TrapError,
-                    librouteros.exceptions.MultiTrapError,
-                    librouteros.exceptions.ConnectionError):
-                _LOGGER.error("Command error")
+                except Exception as e:
+                    _LOGGER.error("Run script error: %s", str(e))
+
+            elif CONF_COMMAND in call.data:
+                try:
+                    command = call.data.get(CONF_COMMAND).split(' ')
+                    find = call.data.get(CONF_FIND)
+
+                    _LOGGER.info("API request: %s", command)
+
+                    if len(command) >= 2:
+                        if find:
+                            required_params = re.findall(
+                                r'(\w+)="([^"]+)"', find)
+
+                            _LOGGER.info("Find required params: %s",
+                                         required_params)
+
+                            for item in api.path(*command[:-1]):
+                                param_counter = 0
+
+                                for param in required_params:
+                                    param_name = item.get(param[0])
+
+                                    if param_name and param_name == param[1]:
+                                        param_counter += 1
+
+                                if len(required_params) == param_counter:
+                                    params = {'.id': item.get('.id')}
+                                    _LOGGER.debug("Found item: %s", item)
+
+                                    cmd = api.path(*command[:-1])
+
+                                    _LOGGER.info("Result: %s", list(
+                                        cmd(command[len(command)-1], **params)
+                                    ))
+
+                        else:
+                            _LOGGER.info("Result: %s", list(
+                                api.path(*command)
+                            ))
+
+                    else:
+                        _LOGGER.error(
+                            "Invalid command, must include at least 2 words")
+
+                except Exception as e:
+                    _LOGGER.error("API error: %s", str(e))
 
         except (librouteros.exceptions.TrapError,
                 librouteros.exceptions.MultiTrapError,
                 librouteros.exceptions.ConnectionError) as api_error:
-            _LOGGER.error("Connection error: %s", api_error)
+            _LOGGER.error("Connection error: %s", str(api_error))
 
     hass.services.async_register(
-        DOMAIN, SERVICE_COMMAND_NAME, run_script,
-        schema=SERVICE_SCHEMA)
+        DOMAIN, RUN_SCRIPT_COMMAND, run,
+        schema=SCRIPT_SCHEMA)
+
+    hass.services.async_register(
+        DOMAIN, API_COMMAND, run,
+        schema=API_SCHEMA)
 
     return True

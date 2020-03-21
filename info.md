@@ -1,4 +1,4 @@
-The `mikotik` platform enables you to execute scripts in MikroTik router
+The `mikrotik` platform enables you to execute scripts and perform API requests in MikroTik router
 
 To enable MikroTik platform in your installation, add the following to your `configuration.yaml` file:
 
@@ -16,3 +16,5 @@ Configuration variables:
 - **port** (*Optional*): default is `8728`
 - **username** (*Required*)
 - **password** (*Optional*)
+
+You will have a 2 new services to call either from Development Tools or from scripts.

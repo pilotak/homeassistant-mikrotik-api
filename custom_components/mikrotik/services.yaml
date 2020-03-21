@@ -1,7 +1,16 @@
 run_script:
   description: Run script on RouterBoard
-
   fields:
     name:
       description: Name of the saved script
       example: "MySavedScript"
+
+api:
+  description: Run api command on RouterBoard
+  fields:
+    command:
+      description: Command
+      example: "/ip firewall address-list disable"
+    find:
+      description: "Find parameters. Will result in: [find <your params>] "
+      example: "list=\"internet\" comment=\"test\""

@@ -1,5 +1,5 @@
 # HomeAssistant component: `MikroTik`
-The `mikrotik` platform enables you to execute scripts in MikroTik router
+The `mikrotik` platform enables you to execute scripts and perform API requests in MikroTik router
 
 To enable MikroTik platform in your installation, add the following to your `configuration.yaml` file:
 
@@ -35,3 +35,6 @@ You need to copy `mikrotik` folder from this repo to the `custom_components` fol
 ```
 
 >__Note__: if the `custom_components` directory does not exist, you need to create it.
+
+## Usage
+You will have a 2 new services to call either from Development Tools or from scripts.
