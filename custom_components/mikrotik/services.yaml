@@ -12,5 +12,8 @@ api:
       description: Command
       example: "/ip firewall address-list disable"
     find:
-      description: "Find parameters. Will result in: [find <your params>] "
+      description: "Find command"
+      example: "/ip firewall address-list"
+    find_params:
+      description: "Parameters to match in find command"
       example: "list=\"internet\" comment=\"test\""

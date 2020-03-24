@@ -5,21 +5,17 @@ import voluptuous as vol
 import re
 
 import homeassistant.helpers.config_validation as cv
-from homeassistant.const import (
-    CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_PORT, CONF_NAME,
-    CONF_COMMAND)
+from homeassistant.const import (CONF_HOST, CONF_USERNAME, CONF_PASSWORD,
+                                 CONF_PORT, CONF_NAME, CONF_COMMAND)
 
 from librouteros import connect
 from librouteros.query import Key
 
-from .const import (
-    DEFAUL_PORT,
-    RUN_SCRIPT_COMMAND,
-    API_COMMAND,
-    CONF_FIND
-)
+from .const import (DEFAUL_PORT, RUN_SCRIPT_COMMAND, API_COMMAND, CONF_FIND,
+                    CONF_FIND_PARAMS, CONF_ADD, CONF_REMOVE, CONF_UPDATE,
+                    CONF_PARAMS)
 
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 REQUIREMENTS = ['librouteros==3.0.0']
 
@@ -27,22 +23,28 @@ DOMAIN = "mikrotik"
 
 _LOGGER = logging.getLogger(__name__)
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Optional(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_PORT): cv.port
-    }),
-}, extra=vol.ALLOW_EXTRA)
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN:
+        vol.Schema({
+            vol.Required(CONF_HOST): cv.string,
+            vol.Required(CONF_USERNAME): cv.string,
+            vol.Optional(CONF_PASSWORD): cv.string,
+            vol.Optional(CONF_PORT): cv.port
+        }),
+    },
+    extra=vol.ALLOW_EXTRA)
 
-SCRIPT_SCHEMA = vol.Schema({
-    vol.Required(CONF_NAME): cv.string
-})
+SCRIPT_SCHEMA = vol.Schema({vol.Required(CONF_NAME): cv.string})
 
 API_SCHEMA = vol.Schema({
     vol.Required(CONF_COMMAND): cv.string,
-    vol.Optional(CONF_FIND): cv.string
+    vol.Optional(CONF_FIND): cv.string,
+    vol.Optional(CONF_FIND_PARAMS): cv.string,
+    vol.Optional(CONF_ADD): cv.string,
+    vol.Optional(CONF_REMOVE): cv.string,
+    vol.Optional(CONF_UPDATE): cv.string,
+    vol.Optional(CONF_PARAMS): cv.string
 })
 
 
@@ -63,11 +65,7 @@ def async_setup(hass, config):
 
         try:
             api = connect(
-                host=host,
-                username=username,
-                password=password,
-                port=port
-            )
+                host=host, username=username, password=password, port=port)
 
             if CONF_NAME in call.data:
                 req_script = call.data.get(CONF_NAME)
@@ -93,44 +91,97 @@ def async_setup(hass, config):
                 try:
                     command = call.data.get(CONF_COMMAND).split(' ')
                     find = call.data.get(CONF_FIND)
+                    find_params = call.data.get(CONF_FIND_PARAMS)
+                    add = call.data.get(CONF_ADD)
+                    remove = call.data.get(CONF_REMOVE)
+                    update = call.data.get(CONF_UPDATE)
+                    params = call.data.get(CONF_PARAMS)
+
+                    if len(command) < 2:
+                        _LOGGER.error(
+                            "Invalid command, must include at least 2 words")
+                        return
 
                     _LOGGER.info("API request: %s", command)
+                    ids = []
 
-                    if len(command) >= 2:
-                        if find:
-                            required_params = re.findall(
-                                r'(\w+)="([^"]+)"', find)
+                    if find and find_params:
+                        find = find.split(' ')
+                        # convert find_params to dictionary, keep type
+                        required_params = re.findall(
+                            r'([^\s]+)(=|~)(?:"|\')([^"]+)(?:"|\')',
+                            find_params)
 
-                            _LOGGER.info("Find required params: %s",
-                                         required_params)
+                        _LOGGER.info("Find cmd: %s", find)
+                        _LOGGER.info("Required params: %s", required_params)
 
-                            for item in api.path(*command[:-1]):
-                                param_counter = 0
+                        # exlude find and cmd
+                        for item in api.path(*find):
+                            param_counter = 0
 
-                                for param in required_params:
-                                    param_name = item.get(param[0])
-
-                                    if param_name and param_name == param[1]:
+                            for param in required_params:
+                                if param[0] in item:
+                                    if param[1] == '~' and re.search(
+                                            param[2], item.get(param[0])):
                                         param_counter += 1
 
-                                if len(required_params) == param_counter:
-                                    params = {'.id': item.get('.id')}
-                                    _LOGGER.debug("Found item: %s", item)
+                                    elif param[1] == '=' and item.get(
+                                            param[0]) == param[2]:
+                                        param_counter += 1
 
-                                    cmd = api.path(*command[:-1])
+                                    if len(required_params) == param_counter:
+                                        _LOGGER.debug("Found item: %s", item)
+                                        ids.append({'.id': item.get('.id')})
 
-                                    _LOGGER.info("Result: %s", list(
-                                        cmd(command[len(command)-1], **params)
-                                    ))
+                        if len(ids) == 0:
+                            _LOGGER.warning("Required params not found")
+                            return
+
+                    # convert params to dictionary
+                    if params and len(params) > 0:
+                        params = dict(
+                            re.findall(r'([^\s]+)=(?:"|\')([^"]+)(?:"|\')',
+                                       params))
+                        _LOGGER.info("Params: %s", params)
+
+                    if (add or remove or update):
+                        if len(params) == 0:
+                            _LOGGER.error("Missing parameters")
+                            return
+
+                        # cmd = api.path(*command)
+
+                        if add:
+                            _LOGGER.error("ADD command is TODO")
+                            # cmd.add(**params)
+
+                        elif remove:
+                            _LOGGER.error("REMOVE command is TODO")
+                            # cmd.remove(**params)
+
+                        elif update:
+                            _LOGGER.error("UPDATE command is TODO")
+                            # cmd.update(**params)
+
+                    else:
+                        if len(ids) > 0:
+                            for id in ids:
+                                if params:
+                                    params = {**params, **id}
+
+                                else:
+                                    params = id
+
+                                cmd = api.path(*command[:-1])
+                                tuple(cmd(command[-1], **params))
+
+                        elif len(params) > 0:
+                            cmd = api.path(*command[:-1])
+                            tuple(cmd(command[-1], **params))
 
                         else:
                             _LOGGER.info("Result: %s", list(
-                                api.path(*command)
-                            ))
-
-                    else:
-                        _LOGGER.error(
-                            "Invalid command, must include at least 2 words")
+                                api.path(*command)))
 
                 except Exception as e:
                     _LOGGER.error("API error: %s", str(e))
@@ -141,11 +192,8 @@ def async_setup(hass, config):
             _LOGGER.error("Connection error: %s", str(api_error))
 
     hass.services.async_register(
-        DOMAIN, RUN_SCRIPT_COMMAND, run,
-        schema=SCRIPT_SCHEMA)
+        DOMAIN, RUN_SCRIPT_COMMAND, run, schema=SCRIPT_SCHEMA)
 
-    hass.services.async_register(
-        DOMAIN, API_COMMAND, run,
-        schema=API_SCHEMA)
+    hass.services.async_register(DOMAIN, API_COMMAND, run, schema=API_SCHEMA)
 
     return True
