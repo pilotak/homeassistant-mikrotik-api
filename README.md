@@ -37,4 +37,4 @@ You need to copy `mikrotik` folder from this repo to the `custom_components` fol
 >__Note__: if the `custom_components` directory does not exist, you need to create it.
 
 ## Usage
-You will have a 2 new services to call either from Development Tools or from scripts.
+You will have a 5 new services to call either from Development Tools or from scripts.

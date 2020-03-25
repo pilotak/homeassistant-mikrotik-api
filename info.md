@@ -17,4 +17,4 @@ Configuration variables:
 - **username** (*Required*)
 - **password** (*Optional*)
 
-You will have a 2 new services to call either from Development Tools or from scripts.
+You will have a 5 new services to call either from Development Tools or from scripts.
