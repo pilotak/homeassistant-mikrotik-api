@@ -6,7 +6,7 @@ run_script:
       example: "MySavedScript"
 
 api:
-  description: Run api command on RouterBoard
+  description: Arbitrary command (other than Remove, Add or Update)
   fields:
     command:
       description: Command
@@ -17,3 +17,42 @@ api:
     find_params:
       description: "Parameters to match in find command"
       example: "list=\"internet\" comment=\"test\""
+
+remove:
+  description: Remove API
+  fields:
+    command:
+      description: Command
+      example: "/ip firewall address-list"
+    find:
+      description: "Find command"
+      example: "/ip firewall address-list"
+    find_params:
+      description: "Parameters to match in find command"
+      example: "list=\"internet\" comment=\"test\""
+
+add:
+  description: Add API
+  fields:
+    command:
+      description: Command
+      example: "/ip firewall address-list"
+    params:
+      description: "Parameters"
+      example: "list=\"internet\" address=\"192.168.88.1\" comment=\"test\""
+
+update:
+  description: Update API
+  fields:
+    command: 
+      description: Command
+      example: "/ip firewall address-list"
+    find:
+      description: "Find command"
+      example: "/ip firewall address-list"
+    find_params:
+      description: "Parameters to match in find command"
+      example: "comment=\"test\""
+    params:
+      description: "Parameters to update"
+      example: "comment=\"test2\""

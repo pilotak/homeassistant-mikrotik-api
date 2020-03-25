@@ -11,9 +11,9 @@ from homeassistant.const import (CONF_HOST, CONF_USERNAME, CONF_PASSWORD,
 from librouteros import connect
 from librouteros.query import Key
 
-from .const import (DEFAUL_PORT, RUN_SCRIPT_COMMAND, API_COMMAND, CONF_FIND,
-                    CONF_FIND_PARAMS, CONF_ADD, CONF_REMOVE, CONF_UPDATE,
-                    CONF_PARAMS)
+from .const import (DEFAUL_PORT, RUN_SCRIPT_COMMAND, REMOVE_COMMAND,
+                    ADD_COMMAND, UPDATE_COMMAND, API_COMMAND, CONF_COMMAND,
+                    CONF_PARAMS, CONF_FIND, CONF_FIND_PARAMS)
 
 __version__ = '1.2.0'
 
@@ -35,16 +35,20 @@ CONFIG_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA)
 
-SCRIPT_SCHEMA = vol.Schema({vol.Required(CONF_NAME): cv.string})
+SCRIPT_SCHEMA = vol.Schema({
+    vol.Required(CONF_NAME): cv.string
+})
 
-API_SCHEMA = vol.Schema({
+ADD_SCHEMA = vol.Schema({
     vol.Required(CONF_COMMAND): cv.string,
+    vol.Required(CONF_PARAMS): cv.string
+})
+
+COMMAND_SCHEMA = vol.Schema({
+    vol.Required(CONF_COMMAND): cv.string,
+    vol.Optional(CONF_PARAMS): cv.string,
     vol.Optional(CONF_FIND): cv.string,
-    vol.Optional(CONF_FIND_PARAMS): cv.string,
-    vol.Optional(CONF_ADD): cv.string,
-    vol.Optional(CONF_REMOVE): cv.string,
-    vol.Optional(CONF_UPDATE): cv.string,
-    vol.Optional(CONF_PARAMS): cv.string
+    vol.Optional(CONF_FIND_PARAMS): cv.string
 })
 
 
@@ -57,143 +61,191 @@ def async_setup(hass, config):
     password = conf.get(CONF_PASSWORD, "")
     port = conf.get(CONF_PORT, DEFAUL_PORT)
 
-    _LOGGER.info("Setup")
-
-    @asyncio.coroutine
-    def run(call):
-        """Run script service."""
-
+    def get_api():
         try:
             api = connect(
                 host=host, username=username, password=password, port=port)
-
-            if CONF_NAME in call.data:
-                req_script = call.data.get(CONF_NAME)
-
-                _LOGGER.debug("Sending request to run '%s' script", req_script)
-
-                try:
-                    name = Key('name')
-                    id = Key('.id')
-
-                    for script_id in api.path(
-                            'system',
-                            'script').select(id).where(name == req_script):
-                        _LOGGER.info("Running script: %s", script_id)
-
-                        cmd = api.path('system', 'script')
-                        tuple(cmd('run', **script_id))
-
-                except Exception as e:
-                    _LOGGER.error("Run script error: %s", str(e))
-
-            elif CONF_COMMAND in call.data:
-                try:
-                    command = call.data.get(CONF_COMMAND).split(' ')
-                    find = call.data.get(CONF_FIND)
-                    find_params = call.data.get(CONF_FIND_PARAMS)
-                    add = call.data.get(CONF_ADD)
-                    remove = call.data.get(CONF_REMOVE)
-                    update = call.data.get(CONF_UPDATE)
-                    params = call.data.get(CONF_PARAMS)
-
-                    if len(command) < 2:
-                        _LOGGER.error(
-                            "Invalid command, must include at least 2 words")
-                        return
-
-                    _LOGGER.info("API request: %s", command)
-                    ids = []
-
-                    if find and find_params:
-                        find = find.split(' ')
-                        # convert find_params to dictionary, keep type
-                        required_params = re.findall(
-                            r'([^\s]+)(=|~)(?:"|\')([^"]+)(?:"|\')',
-                            find_params)
-
-                        _LOGGER.info("Find cmd: %s", find)
-                        _LOGGER.info("Required params: %s", required_params)
-
-                        # exlude find and cmd
-                        for item in api.path(*find):
-                            param_counter = 0
-
-                            for param in required_params:
-                                if param[0] in item:
-                                    if param[1] == '~' and re.search(
-                                            param[2], item.get(param[0])):
-                                        param_counter += 1
-
-                                    elif param[1] == '=' and item.get(
-                                            param[0]) == param[2]:
-                                        param_counter += 1
-
-                                    if len(required_params) == param_counter:
-                                        _LOGGER.debug("Found item: %s", item)
-                                        ids.append({'.id': item.get('.id')})
-
-                        if len(ids) == 0:
-                            _LOGGER.warning("Required params not found")
-                            return
-
-                    # convert params to dictionary
-                    if params and len(params) > 0:
-                        params = dict(
-                            re.findall(r'([^\s]+)=(?:"|\')([^"]+)(?:"|\')',
-                                       params))
-                        _LOGGER.info("Params: %s", params)
-
-                    if (add or remove or update):
-                        if len(params) == 0:
-                            _LOGGER.error("Missing parameters")
-                            return
-
-                        # cmd = api.path(*command)
-
-                        if add:
-                            _LOGGER.error("ADD command is TODO")
-                            # cmd.add(**params)
-
-                        elif remove:
-                            _LOGGER.error("REMOVE command is TODO")
-                            # cmd.remove(**params)
-
-                        elif update:
-                            _LOGGER.error("UPDATE command is TODO")
-                            # cmd.update(**params)
-
-                    else:
-                        if len(ids) > 0:
-                            for id in ids:
-                                if params:
-                                    params = {**params, **id}
-
-                                else:
-                                    params = id
-
-                                cmd = api.path(*command[:-1])
-                                tuple(cmd(command[-1], **params))
-
-                        elif len(params) > 0:
-                            cmd = api.path(*command[:-1])
-                            tuple(cmd(command[-1], **params))
-
-                        else:
-                            _LOGGER.info("Result: %s", list(
-                                api.path(*command)))
-
-                except Exception as e:
-                    _LOGGER.error("API error: %s", str(e))
+            _LOGGER.info("Connected to %s:%u", host, port)
+            return api
 
         except (librouteros.exceptions.TrapError,
                 librouteros.exceptions.MultiTrapError,
                 librouteros.exceptions.ConnectionError) as api_error:
             _LOGGER.error("Connection error: %s", str(api_error))
 
-    hass.services.async_register(
-        DOMAIN, RUN_SCRIPT_COMMAND, run, schema=SCRIPT_SCHEMA)
+    def get_params(params):
+        ret = []
 
-    hass.services.async_register(DOMAIN, API_COMMAND, run, schema=API_SCHEMA)
+        # convert params to dictionary
+        if params and len(params) > 0:
+            ret = dict(re.findall(r'([^\s]+)=(?:"|\')([^"]+)(?:"|\')', params))
+
+        return ret
+
+    def get_ids(api, call):
+        find = call.data.get(CONF_FIND)
+        find_params = call.data.get(CONF_FIND_PARAMS)
+        ids = []
+
+        if find and find_params:
+            find = find.split(' ')
+            # convert find_params to dictionary, keep type
+            required_params = re.findall(
+                r'([^\s]+)(?:=|~)(?:"|\')([^"]+)(?:"|\')', find_params)
+
+            _LOGGER.info("Find cmd: %s", find)
+            _LOGGER.info("Required params: %s", required_params)
+
+            # exlude find and cmd
+            for item in api.path(*find):
+                param_counter = 0
+
+                for param in required_params:
+                    if param[0] in item:
+                        if re.search(param[1], item.get(param[0])):
+                            param_counter += 1
+
+                        if len(required_params) == param_counter:
+                            _LOGGER.debug("Found item: %s", item)
+                            ids.append(item.get('.id'))
+
+            if len(ids) > 0:
+                return ids
+
+        _LOGGER.warning("Required params not found")
+        return []
+
+    async def run_script(call):
+        api = get_api()
+
+        if CONF_NAME in call.data:
+            req_script = call.data.get(CONF_NAME)
+
+            _LOGGER.debug("Sending request to run '%s' script", req_script)
+
+            try:
+                name = Key('name')
+                id = Key('.id')
+
+                for script_id in api.path(
+                        'system',
+                        'script').select(id).where(name == req_script):
+                    _LOGGER.info("Running script: %s", script_id)
+
+                    cmd = api.path('system', 'script')
+                    tuple(cmd('run', **script_id))
+
+            except Exception as e:
+                _LOGGER.error("Run script error: %s", str(e))
+
+    async def remove(call):
+        command = call.data.get(CONF_COMMAND).split(' ')
+
+        api = get_api()
+
+        try:
+            params = get_params(call.data.get(CONF_PARAMS))
+            ids = get_ids(api, call)
+
+            if len(ids) > 0 and len(params) > 0:
+                _LOGGER.error("Use only params or find_params not both")
+                return
+            elif len(ids) == 0 and (len(params) == 0 or '.id' not in params):
+                _LOGGER.error("Missing ID")
+                return
+
+            _LOGGER.debug("REMOVE command id: %s %s",
+                          list(params.values()) if len(params) else ids)
+
+            params = list(params.values()) if len(params) > 0 else ids
+            cmd = api.path(*command)
+            cmd.remove(*params)
+
+        except Exception as e:
+            _LOGGER.error("Remove API error: %s", str(e))
+
+    async def add(call):
+        command = call.data.get(CONF_COMMAND).split(' ')
+
+        api = get_api()
+
+        try:
+            params = get_params(call.data.get(CONF_PARAMS))
+
+            if len(params) == 0:
+                _LOGGER.error("Missing parameters")
+                return
+
+            _LOGGER.debug("ADD command params: %s", params)
+
+            cmd = api.path(*command)
+            _LOGGER.info("Returned id: %s", cmd.add(**params))
+
+        except Exception as e:
+            _LOGGER.error("Add API error: %s", str(e))
+
+    async def update(call):
+        command = call.data.get(CONF_COMMAND).split(' ')
+
+        api = get_api()
+
+        try:
+            params = get_params(call.data.get(CONF_PARAMS))
+            ids = get_ids(api, call)
+
+            for i in range(max(len(ids), bool(len(params)))):
+                if len(ids) > 0:
+                    if params:
+                        params = {**params, **{'.id': ids[i]}}
+                    else:
+                        params = ids[i]
+                elif '.id' not in params:
+                    _LOGGER.error("Missing ID")
+                    return
+
+                _LOGGER.info("Update parameters: %s", params)
+                cmd = api.path(*command)
+                cmd.update(**params)
+
+        except Exception as e:
+            _LOGGER.error("Update API error: %s", str(e))
+
+    async def command(call):
+        command = call.data.get(CONF_COMMAND).split(' ')
+
+        api = get_api()
+
+        try:
+            params = get_params(call.data.get(CONF_PARAMS))
+            ids = get_ids(api, call)
+
+            if len(ids) > 0 or len(params) > 0:
+                for i in range(max(len(ids), bool(len(params)))):
+                    if len(ids) > 0:
+                        if params:
+                            params = {**params, **{'.id': ids[i]}}
+                        else:
+                            params = {'.id': ids[i]}
+
+                    _LOGGER.info("Query parameters: %s", params)
+                    cmd = api.path(*command[:-1])
+                    tuple(cmd(command[-1], **params))
+
+            else:
+                _LOGGER.info("Result: %s", list(api.path(*command)))
+
+        except Exception as e:
+            _LOGGER.error("API error: %s", str(e))
+
+    hass.services.async_register(
+        DOMAIN, RUN_SCRIPT_COMMAND, run_script, schema=SCRIPT_SCHEMA)
+    hass.services.async_register(
+        DOMAIN, REMOVE_COMMAND, remove, schema=COMMAND_SCHEMA)
+    hass.services.async_register(
+        DOMAIN, ADD_COMMAND, add, schema=ADD_SCHEMA)
+    hass.services.async_register(
+        DOMAIN, UPDATE_COMMAND, update, schema=COMMAND_SCHEMA)
+    hass.services.async_register(
+        DOMAIN, API_COMMAND, command, schema=COMMAND_SCHEMA)
 
     return True
