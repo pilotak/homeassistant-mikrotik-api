@@ -1,0 +1,27 @@
+name: Validate
+
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  validate:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout
+        uses: "actions/checkout@v2"
+
+      - name: HACS validation
+        uses: hacs/integration/action@main
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CATEGORY: "integration"
+      
+      - name: HASSFEST
+        uses: home-assistant/actions/hassfest@master

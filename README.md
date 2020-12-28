@@ -1,4 +1,7 @@
 # HomeAssistant component: `MikroTik`
+[![Validate](https://github.com/pilotak/homeassistant-mikrotik/workflows/Validate/badge.svg)](https://github.com/pilotak/homeassistant-mikrotik/actions)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+
 The `mikrotik` platform enables you to execute scripts and perform API requests in MikroTik router
 
 To enable MikroTik platform in your installation, add the following to your `configuration.yaml` file:
