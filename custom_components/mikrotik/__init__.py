@@ -11,7 +11,7 @@ from homeassistant.const import (CONF_HOST, CONF_USERNAME, CONF_PASSWORD,
 from librouteros import connect
 from librouteros.query import Key
 
-from .const import (DEFAUL_PORT, RUN_SCRIPT_COMMAND, REMOVE_COMMAND,
+from .const import (DEFAULT_PORT, RUN_SCRIPT_COMMAND, REMOVE_COMMAND,
                     ADD_COMMAND, UPDATE_COMMAND, API_COMMAND, CONF_COMMAND,
                     CONF_PARAMS, CONF_FIND, CONF_FIND_PARAMS)
 
@@ -59,7 +59,7 @@ def async_setup(hass, config):
     host = conf.get(CONF_HOST)
     username = conf.get(CONF_USERNAME)
     password = conf.get(CONF_PASSWORD, "")
-    port = conf.get(CONF_PORT, DEFAUL_PORT)
+    port = conf.get(CONF_PORT, DEFAULT_PORT)
 
     def get_api():
         try:
@@ -74,11 +74,19 @@ def async_setup(hass, config):
             _LOGGER.error("Connection error: %s", str(api_error))
 
     def get_params(params):
-        ret = []
+        ret = dict()
 
         # convert params to dictionary
         if params and len(params) > 0:
-            ret = dict(re.findall(r'([^\s]+)=(?:"|\')([^"]+)(?:"|\')', params))
+            for param in re.findall(r'(\w+)[\s]*(?:=|~)[\s]*((?:[^"\'\s]+)|\'(?:[^\']*)\'|"(?:[^"]*)")', params):
+                if param[1][:1] == '\'' or param[1][:1] == '"':
+                    ret.update({param[0]: param[1][1:-1]})
+                elif param[1].isdecimal():
+                    ret.update({param[0]: int(param[1])})
+                elif param[1].lower() == 'true':
+                    ret.update({param[0]: True})
+                elif param[1].lower() == 'false':
+                    ret.update({param[0]: False})
 
         return ret
 
@@ -89,7 +97,7 @@ def async_setup(hass, config):
 
         if find and find_params:
             find = find.split(' ')
-            # convert find_params to dictionary, keep type
+
             required_params = re.findall(
                 r'([^\s]+)(?:=|~)(?:"|\')([^"]+)(?:"|\')', find_params)
 
@@ -112,7 +120,9 @@ def async_setup(hass, config):
             if len(ids) > 0:
                 return ids
 
-        _LOGGER.warning("Required params not found")
+            else:
+                _LOGGER.warning("Required params not found")
+
         return []
 
     async def run_script(call):
@@ -220,6 +230,8 @@ def async_setup(hass, config):
             ids = get_ids(api, call)
 
             if len(ids) > 0 or len(params) > 0:
+                _LOGGER.info("Command: %s %s", *command[:-1], command[-1])
+
                 for i in range(max(len(ids), bool(len(params)))):
                     if len(ids) > 0:
                         if params:
@@ -229,9 +241,10 @@ def async_setup(hass, config):
 
                     _LOGGER.info("Query parameters: %s", params)
                     cmd = api.path(*command[:-1])
-                    tuple(cmd(command[-1], **params))
+                    _LOGGER.info("Result: %s", tuple(cmd(command[-1], **params)))
 
             else:
+                _LOGGER.info("Command: %s", command)
                 _LOGGER.info("Result: %s", list(api.path(*command)))
 
         except Exception as e:

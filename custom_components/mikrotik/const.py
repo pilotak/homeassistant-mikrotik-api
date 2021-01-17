@@ -1,6 +1,6 @@
 """Constants used in the MikroTik component."""
 
-DEFAUL_PORT = 8728
+DEFAULT_PORT = 8728
 
 RUN_SCRIPT_COMMAND = "run_script"
 REMOVE_COMMAND = "remove"
