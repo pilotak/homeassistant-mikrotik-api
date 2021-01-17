@@ -9,14 +9,17 @@ api:
   description: Arbitrary command (other than Remove, Add or Update)
   fields:
     command:
-      description: Command
+      description: Command (required)
       example: "/ip firewall address-list disable"
     find:
-      description: "Find command"
+      description: Find command (optional)
       example: "/ip firewall address-list"
     find_params:
-      description: "Parameters to match in find command"
+      description: Parameters to match in find command (optional)
       example: "list=\"internet\" comment=\"test\""
+    params:
+      description: Parameters (optional)
+      example: "test=1"
 
 remove:
   description: Remove API

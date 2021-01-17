@@ -98,18 +98,18 @@ def async_setup(hass, config):
         if find and find_params:
             find = find.split(' ')
 
-            required_params = re.findall(
-                r'([^\s]+)(?:=|~)(?:"|\')([^"]+)(?:"|\')', find_params)
+            required_params = get_params(find_params)
 
-            _LOGGER.info("Find cmd: %s", find)
-            _LOGGER.info("Required params: %s", required_params)
+            _LOGGER.info("Find cmd: %s", *find)
+            _LOGGER.info("Find params: %s", required_params)
 
-            # exlude find and cmd
             for item in api.path(*find):
+                # _LOGGER.debug("Checking params from API: %s", item)
                 param_counter = 0
 
-                for param in required_params:
+                for param in required_params.items():
                     if param[0] in item:
+
                         if re.search(param[1], item.get(param[0])):
                             param_counter += 1
 
@@ -241,11 +241,17 @@ def async_setup(hass, config):
 
                     _LOGGER.info("Query parameters: %s", params)
                     cmd = api.path(*command[:-1])
-                    _LOGGER.info("Result: %s", tuple(cmd(command[-1], **params)))
+                    result = tuple(cmd(command[-1], **params))
+
+                    if len(result) > 0:
+                        _LOGGER.info("Result: %s", )
 
             else:
                 _LOGGER.info("Command: %s", command)
-                _LOGGER.info("Result: %s", list(api.path(*command)))
+                result = list(api.path(*command))
+
+                if len(result) > 0:
+                    _LOGGER.info("Result: %s", result)
 
         except Exception as e:
             _LOGGER.error("API error: %s", str(e))
