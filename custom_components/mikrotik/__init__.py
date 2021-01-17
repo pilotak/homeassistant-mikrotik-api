@@ -17,7 +17,7 @@ from .const import (DEFAULT_PORT, RUN_SCRIPT_COMMAND, REMOVE_COMMAND,
 
 __version__ = '1.2.0'
 
-REQUIREMENTS = ['librouteros==3.0.0']
+REQUIREMENTS = ['librouteros==3.1.0']
 
 DOMAIN = "mikrotik"
 

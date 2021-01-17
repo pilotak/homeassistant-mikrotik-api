@@ -2,11 +2,8 @@
   "domain": "mikrotik",
   "name": "Mikrotik",
   "documentation": "https://github.com/pilotak/homeassistant-mikrotik",
-  "requirements": [
-  	"librouteros==3.0.0"
-  ],
+  "issue_tracker": "https://github.com/pilotak/homeassistant-mikrotik/issues",
+  "requirements": ["librouteros==3.1.0"],
   "dependencies": [],
-  "codeowners": [
-  	"@pilotak"
-  ]
+  "codeowners": ["@pilotak"]
 }
