@@ -18,10 +18,5 @@ jobs:
       - name: Checkout
         uses: "actions/checkout@v2"
 
-      - name: HACS validation
-        uses: hacs/action@main
-        with:
-          CATEGORY: integration
-
       - name: HASSFEST
         uses: home-assistant/actions/hassfest@master
