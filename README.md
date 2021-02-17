@@ -59,3 +59,8 @@ params: address="1.1.1.1" count=3
 command: tools ping
 params: mac="00:00:00:00:00"
 ```
+
+```yaml
+command: /caps-man radio provision
+params: .id=0
+```
