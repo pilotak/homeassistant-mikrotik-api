@@ -79,11 +79,10 @@ def async_setup(hass, config):
         # convert params to dictionary
         if params and len(params) > 0:
             for param in re.findall(
-                r'([a-zA-Z-]+|\.id)[\s]*'
-                '(?:=|~)[\s]*((?:[^"\'\s]+)|\''
-                '(?:[^\']*)\'|"(?:[^"]*)")',
-                params,
-            ):
+                r'([a-zA-Z-]+|\.id)'
+                r'[\s]*(?:=|~)[\s]*'
+                r'((?:[^"\'\s]+)|\'(?:[^\']*)\'|"(?:[^"]*)")',
+                    params):
                 if param[1][:1] == '\'' or param[1][:1] == '"':
                     ret.update({param[0]: param[1][1:-1]})
                 elif param[1].isdecimal():
