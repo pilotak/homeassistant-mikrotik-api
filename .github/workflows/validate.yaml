@@ -18,5 +18,13 @@ jobs:
       - name: Checkout
         uses: "actions/checkout@v2"
 
+      - name: Check PEP8
+        uses: andymckay/pycodestyle-action@0.1.3
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          CATEGORY: integration
+
       - name: HASSFEST
         uses: home-assistant/actions/hassfest@master
