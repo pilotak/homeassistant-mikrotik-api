@@ -54,7 +54,7 @@ COMMAND_SCHEMA = vol.Schema({
 
 @asyncio.coroutine
 def async_setup(hass, config):
-    """Initialize of Mikrotik API component."""
+    """Initialize of MikroTik API component."""
     conf = config[DOMAIN]
     host = conf.get(CONF_HOST)
     username = conf.get(CONF_USERNAME)

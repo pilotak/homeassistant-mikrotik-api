@@ -1,9 +1,9 @@
-# HomeAssistant component: `MikroTik`
+# HomeAssistant component: `MikroTik API`
 [![Validate](https://github.com/pilotak/homeassistant-mikrotik-api/workflows/Validate/badge.svg)](https://github.com/pilotak/homeassistant-mikrotik-api/actions)
 
 The `mikrotik_api` platform enables you to execute scripts and perform API requests in MikroTik router
 
-To enable MikroTik platform in your installation, add the following to your `configuration.yaml` file:
+To enable MikroTik API platform in your installation, add the following to your `configuration.yaml` file:
 
 ```yaml
 # Example configuration.yaml entry
