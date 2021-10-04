@@ -5,7 +5,7 @@ run_script:
       description: Name of the saved script
       example: "MySavedScript"
 
-api:
+call:
   description: Arbitrary command (other than Remove, Add or Update)
   fields:
     command:

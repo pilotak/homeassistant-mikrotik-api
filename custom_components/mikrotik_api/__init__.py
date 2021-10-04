@@ -12,14 +12,14 @@ from librouteros import connect
 from librouteros.query import Key
 
 from .const import (DEFAULT_PORT, RUN_SCRIPT_COMMAND, REMOVE_COMMAND,
-                    ADD_COMMAND, UPDATE_COMMAND, API_COMMAND, CONF_COMMAND,
+                    ADD_COMMAND, UPDATE_COMMAND, CALL_COMMAND, CONF_COMMAND,
                     CONF_PARAMS, CONF_FIND, CONF_FIND_PARAMS)
 
-__version__ = '1.2.0'
+__version__ = '2.0.0'
 
 REQUIREMENTS = ['librouteros==3.1.0']
 
-DOMAIN = "mikrotik"
+DOMAIN = "mikrotik_api"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ COMMAND_SCHEMA = vol.Schema({
 
 @asyncio.coroutine
 def async_setup(hass, config):
-    """Initialize of Mikrotik component."""
+    """Initialize of Mikrotik API component."""
     conf = config[DOMAIN]
     host = conf.get(CONF_HOST)
     username = conf.get(CONF_USERNAME)
@@ -265,6 +265,6 @@ def async_setup(hass, config):
     hass.services.async_register(
         DOMAIN, UPDATE_COMMAND, update, schema=COMMAND_SCHEMA)
     hass.services.async_register(
-        DOMAIN, API_COMMAND, command, schema=COMMAND_SCHEMA)
+        DOMAIN, CALL_COMMAND, command, schema=COMMAND_SCHEMA)
 
     return True
