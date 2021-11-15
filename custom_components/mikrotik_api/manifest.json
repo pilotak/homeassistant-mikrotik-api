@@ -5,7 +5,7 @@
   "iot_class": "local_polling",
   "documentation": "https://github.com/pilotak/homeassistant-mikrotik-api",
   "issue_tracker": "https://github.com/pilotak/homeassistant-mikrotik-api/issues",
-  "requirements": ["librouteros==3.1.0"],
+  "requirements": ["librouteros~=3.1"],
   "dependencies": [],
   "codeowners": ["@pilotak"]
 }
